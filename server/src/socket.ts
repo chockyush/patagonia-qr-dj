@@ -16,7 +16,7 @@ let requests: SongRequest[] = [];
 export function setupSocket(server: HttpServer) {
   const io = new Server(server, {
     cors: {
-      origin: "*", // En producción deberíamos limitar esto
+      origin: process.env.CLIENT_URL || "*", 
       methods: ["GET", "POST"]
     }
   });
