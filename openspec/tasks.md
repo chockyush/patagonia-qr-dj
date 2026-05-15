@@ -1,20 +1,20 @@
-# Plan de Tareas - QR-DJ
+# Task List: DJ Panel Cleanup & Grouping
 
-## Batch 1: Cimientos
-- [x] Inicializar `/client` con Vite + React + TS.
-- [x] Inicializar `/server` con Node + Express + TS.
-- [x] Instalar dependencias (socket.io, spotify-web-api-node, cors).
+## Backend Tasks (Server)
+- [ ] Add `admin-delete-request` event handler in `server/src/socket.ts`.
+- [ ] Add `admin-clear-list` event handler in `server/src/socket.ts`.
+- [ ] Verify server synchronization (broadcast `admin-full-list`).
 
-## Batch 2: Backend (El Motor)
-- [x] Integrar Spotify API (Client Credentials Flow).
-- [x] Configurar Socket.io (Events: `send-request`, `admin-update`).
-- [x] Crear store temporal en memoria para los pedidos.
+## Frontend Tasks (Client)
+- [ ] Import `Trash2` and `Trash` from `lucide-react` in `client/src/App.tsx`.
+- [ ] Add `deleteRequest` and `clearList` functions to emit socket events.
+- [ ] Implement `groupedRequests` using `useMemo` in `App` component.
+- [ ] **UI - Header:** Add the "LIMPIAR LISTA" button in the DJ view header.
+- [ ] **UI - List:** Update the request mapping to use the grouped data.
+- [ ] **UI - List:** Add date headers for each group.
+- [ ] **UI - List:** Add the "Borrar" button (Trash2) to each request card.
 
-## Batch 3: Frontend (La Interfaz)
-- [x] Implementar `index.css` con variables de neón y glassmorphism.
-- [x] Componente `SearchSongs` para el cliente.
-- [x] Componente `DjDashboard` para el DJ.
-
-## Batch 4: Verificación y Cierre
-- [x] Pruebas integradas (Cliente pide -> DJ recibe).
-- [x] Optimización para tablets.
+## Verification
+- [ ] Check if "Limpiar Lista" clears the UI and notifies the server.
+- [ ] Check if "Borrar" removes only the selected item.
+- [ ] Verify that grouping works correctly (same day items together, different days separated).

@@ -1,16 +1,22 @@
-# Exploración Técnica - Sistema QR-DJ
+# Exploration: DJ Panel Enhancements
 
-## Objetivos
-- Permitir búsqueda de canciones vía Spotify API.
-- Comunicación bidireccional en tiempo real entre Clientes y DJ.
-- Interfaz optimizada para dispositivos móviles (clientes) y tablets (DJ).
+## Current State
+- **Backend (`server/src/socket.ts`):** 
+    - Manages an in-memory array `requests`.
+    - Events: `send-request`, `admin-update-status`, `admin-full-list`, `admin-new-request`.
+    - No mechanism to remove items from the array or clear it completely.
+- **Frontend (`client/src/App.tsx`):**
+    - Single entry point for both views.
+    - DJ view lists all requests from the backend without filtering or grouping.
+    - Statuses: `pending`, `playing`, `rejected`.
+    - Styles: "Cyber-Night" aesthetic with glassmorphism and neon borders.
 
-## Hallazgos
-1. **Spotify API**: Se utilizará el flujo de `Client Credentials` para búsquedas públicas. Esto evita que los usuarios tengan que autenticarse.
-2. **Socket.io**: Es la mejor opción para la comunicación real-time. Permite manejar "salas" (rooms) por si en el futuro queremos escalar a varios bares.
-3. **Data Model**:
-   - `Request`: `{ id, title, artist, coverUrl, spotifyUri, status, timestamp }`
+## Requirements
+1. **Clear List Button:** DJ needs a way to wipe all requests.
+2. **Delete Individual Request:** DJ needs a "Borrar" option per item, different from "Reject".
+3. **Grouping by Day:** Requests should be grouped by date to manage high volume over multiple nights.
 
-## Riesgos y Mitigaciones
-- **Rate Limiting de Spotify**: Cachearemos resultados de búsqueda comunes.
-- **Conectividad en Bares**: La interfaz debe ser liviana para funcionar bien con 4G/WiFi inestable.
+## Technical Considerations
+- **Grouping:** Frontend-side grouping is easier since the data volume is manageable. We can group the `requests` state before rendering.
+- **Deletion:** Deleting should remove the item from the server-side array to keep it clean and sync across all connected DJ panels.
+- **Icons:** `Trash2` and `RotateCcw` or `Trash` from `lucide-react` fit the aesthetic.

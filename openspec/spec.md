@@ -1,27 +1,36 @@
-# Especificación Técnica - QR-DJ
+# Technical Specification: DJ Panel Management
 
-## API Endpoints (REST)
-- `GET /api/search?q=QUERY`: Busca canciones en Spotify usando Client Credentials.
-- `GET /api/health`: Check de estado del servidor.
+## Socket.io Interface
 
-## Eventos de Tiempo Real (Socket.io)
-### Desde el Cliente:
-- `send-request`: Envía un objeto `Request` al servidor.
-### Desde el Servidor hacia el DJ:
-- `admin-new-request`: Notifica al DJ de un nuevo pedido.
-- `admin-full-list`: Envía la lista completa (al conectar o resetear).
-### Desde el DJ hacia el Servidor:
-- `admin-update-status`: Cambia el estado de un tema (`pending`, `playing`, `rejected`).
+### New Events (Admin)
 
-## Modelo de Datos Detallado
+#### `admin-delete-request`
+- **Direction:** Client -> Server
+- **Payload:** `{ id: string }`
+- **Action:** Removes the request with the matching `id` from the server's `requests` array.
+- **Broadcast:** Emits `admin-full-list` to all connected clients.
+
+#### `admin-clear-list`
+- **Direction:** Client -> Server
+- **Payload:** None
+- **Action:** Resets the server's `requests` array to an empty list `[]`.
+- **Broadcast:** Emits `admin-full-list` to all connected clients.
+
+## Data Structures
+
+### `SongRequest` (Unchanged but for reference)
 ```typescript
-interface SongRequest {
-  id: string;          // NanoID o UUID
-  title: string;       // Nombre del tema
-  artist: string;      // Artista(s)
-  albumCover: string;  // URL de la imagen (640x640)
-  spotifyUri: string;  // Para que el DJ lo abra en Spotify
+export interface SongRequest {
+  id: string;
+  title: string;
+  artist: string;
+  albumCover: string;
+  spotifyUri: string;
   status: 'pending' | 'playing' | 'rejected';
   timestamp: number;
 }
 ```
+
+## Security / Validation
+- Currently, the project does not have auth. These events are restricted by the `/dj` route convention in the client.
+- In the future, a "secret key" or JWT should be added to these admin events.

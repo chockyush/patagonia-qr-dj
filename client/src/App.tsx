@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Music, Search, Disc, Check, X, Shield, QrCode } from 'lucide-react';
+import { Music, Search, Disc, Check, X, Shield, QrCode, Trash2, Trash } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 
 export interface SongRequest {
@@ -82,6 +82,39 @@ const App = () => {
   const updateStatus = (id: string, status: SongRequest['status']) => {
     socket?.emit('admin-update-status', { id, status });
   };
+
+  const deleteRequest = (id: string) => {
+    if (window.confirm('¿Seguro querés borrar este pedido?')) {
+      socket?.emit('admin-delete-request', { id });
+    }
+  };
+
+  const clearList = () => {
+    if (window.confirm('⚠️ ¿ESTÁS SEGURO? Esto va a borrar TODOS los pedidos de la lista.')) {
+      socket?.emit('admin-clear-list');
+    }
+  };
+
+  // Agrupar pedidos por día
+  const groupedRequests = useMemo(() => {
+    const groups: { [key: string]: SongRequest[] } = {};
+    
+    requests.forEach(req => {
+      const date = new Date(req.timestamp).toLocaleDateString('es-AR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+      if (!groups[date]) groups[date] = [];
+      groups[date].push(req);
+    });
+    
+    // Convertir a array y ordenar por fecha (más reciente arriba)
+    // El formato DD/MM/YYYY no ordena bien lexicográficamente, así que usamos el timestamp del primer elemento
+    return Object.entries(groups).sort((a, b) => {
+      return b[1][0].timestamp - a[1][0].timestamp;
+    });
+  }, [requests]);
 
   // Detectar la ruta actual para separar vistas
   useEffect(() => {
@@ -170,7 +203,14 @@ const App = () => {
         {/* El botón de modo ahora es sutil y solo informativo o para testing rápido, 
             podés entrar a /dj directamente para el panel del DJ */}
         {view === 'dj' && (
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <button 
+              onClick={clearList}
+              className="glass-card"
+              style={{ padding: '8px 15px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--secondary-color)', border: '1px solid var(--secondary-color)' }}
+            >
+              <Trash size={18} /> LIMPIAR LISTA
+            </button>
             <button 
               onClick={() => setShowQR(!showQR)} 
               className="glass-card" 
@@ -254,38 +294,61 @@ const App = () => {
             <h2 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <Disc className="neon-text" /> Pedidos en Cola
             </h2>
-            <div style={{ display: 'grid', gap: '15px' }}>
+            <div style={{ display: 'grid', gap: '25px' }}>
               <AnimatePresence>
                 {requests.length === 0 && (
                   <p style={{ opacity: 0.5, textAlign: 'center', marginTop: '40px' }}>No hay pedidos todavía. ¡Esperando la música!</p>
                 )}
-                {requests.map((req) => (
-                  <motion.div 
-                    key={req.id} 
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    layout
-                    className={`glass-card ${req.status === 'playing' ? 'neon-border' : ''}`} 
-                    style={{ display: 'flex', alignItems: 'center', gap: '15px', border: '1px solid rgba(255,255,255,0.1)' }}
-                  >
-                    <img src={req.albumCover} width={60} height={60} style={{ borderRadius: '8px' }} />
-                    <div style={{ flex: 1 }}>
-                      <h4>{req.title}</h4>
-                      <p style={{ opacity: 0.7 }}>{req.artist}</p>
-                      <span className="neon-text" style={{ fontSize: '0.7rem', fontWeight: 'bold' }}>
-                        {req.status === 'pending' ? '🟡 PENDIENTE' : req.status === 'playing' ? '🔵 SONANDO' : '🔴 RECHAZADO'}
-                      </span>
+                {groupedRequests.map(([date, dateRequests]) => (
+                  <div key={date}>
+                    <h3 style={{ 
+                      fontSize: '0.9rem', 
+                      opacity: 0.6, 
+                      marginBottom: '15px', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '10px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '1px'
+                    }}>
+                      <div style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2))' }}></div>
+                      {date}
+                      <div style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg, rgba(255,255,255,0.2), transparent)' }}></div>
+                    </h3>
+                    <div style={{ display: 'grid', gap: '15px' }}>
+                      {dateRequests.map((req) => (
+                        <motion.div 
+                          key={req.id} 
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          layout
+                          className={`glass-card ${req.status === 'playing' ? 'neon-border' : ''}`} 
+                          style={{ display: 'flex', alignItems: 'center', gap: '15px', border: '1px solid rgba(255,255,255,0.1)' }}
+                        >
+                          <img src={req.albumCover} width={60} height={60} style={{ borderRadius: '8px' }} />
+                          <div style={{ flex: 1 }}>
+                            <h4>{req.title}</h4>
+                            <p style={{ opacity: 0.7 }}>{req.artist}</p>
+                            <span className="neon-text" style={{ fontSize: '0.7rem', fontWeight: 'bold' }}>
+                              {req.status === 'pending' ? '🟡 PENDIENTE' : req.status === 'playing' ? '🔵 SONANDO' : '🔴 RECHAZADO'}
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                            <button onClick={() => updateStatus(req.id, 'playing')} className="glass-card" style={{ padding: '8px', color: 'var(--primary-color)', border: '1px solid var(--primary-color)' }} title="Sonando">
+                              <Check size={20} />
+                            </button>
+                            <button onClick={() => updateStatus(req.id, 'rejected')} className="glass-card" style={{ padding: '8px', color: 'var(--secondary-color)', border: '1px solid var(--secondary-color)' }} title="Rechazar">
+                              <X size={20} />
+                            </button>
+                            <button onClick={() => deleteRequest(req.id)} className="glass-card" style={{ padding: '8px', opacity: 0.6, border: '1px solid rgba(255,255,255,0.2)' }} title="Borrar">
+                              <Trash2 size={20} />
+                            </button>
+                          </div>
+                        </motion.div>
+                      ))}
                     </div>
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                      <button onClick={() => updateStatus(req.id, 'playing')} className="glass-card" style={{ padding: '8px', color: 'var(--primary-color)', border: '1px solid var(--primary-color)' }}>
-                        <Check size={20} />
-                      </button>
-                      <button onClick={() => updateStatus(req.id, 'rejected')} className="glass-card" style={{ padding: '8px', color: 'var(--secondary-color)', border: '1px solid var(--secondary-color)' }}>
-                        <X size={20} />
-                      </button>
-                    </div>
-                  </motion.div>
+                  </div>
                 ))}
               </AnimatePresence>
             </div>

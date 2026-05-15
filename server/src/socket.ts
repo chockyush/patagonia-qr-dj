@@ -44,6 +44,20 @@ export function setupSocket(server: HttpServer) {
       }
     });
 
+    // DJ borra un pedido individual
+    socket.on('admin-delete-request', ({ id }: { id: string }) => {
+      requests = requests.filter(r => r.id !== id);
+      console.log('🗑️ Pedido borrado:', id);
+      io.emit('admin-full-list', requests);
+    });
+
+    // DJ limpia toda la lista
+    socket.on('admin-clear-list', () => {
+      requests = [];
+      console.log('🧹 Lista limpiada por el DJ');
+      io.emit('admin-full-list', requests);
+    });
+
     socket.on('disconnect', () => {
       console.log('👋 Conexión cerrada');
     });

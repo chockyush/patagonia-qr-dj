@@ -1,25 +1,24 @@
-# Propuesta de Sistema: QR-DJ Request
+# Proposal: DJ Panel - Cleanup & Grouping
 
-## Objetivo
-Crear una aplicación web real-time que conecte a los clientes de un bar con el DJ a través de un código QR.
+## Goal
+Implement list management tools for the DJ panel, including mass clearing, individual deletion, and date-based grouping.
 
-## Stack Tecnológico
-- **Frontend**: Vite + React + Vanilla CSS (Aesthetics: Cyber-Night).
-- **Backend**: Node.js + Express + Socket.io.
-- **Integración**: Spotify Web API (Búsqueda).
+## Proposed Changes
 
-## Experiencia de Usuario
-1. **Cliente**:
-   - Escanea QR.
-   - Ve una interfaz oscura y elegante con un buscador.
-   - Busca "The Less I Know The Better - Tame Impala".
-   - Selecciona el tema y confirma el pedido.
-2. **DJ**:
-   - En su tablet ve una lista que se actualiza sola.
-   - Los pedidos nuevos resaltan (animación de neón).
-   - Puede marcar temas como "En cola", "Sonando" o "Rechazado".
+### Backend (`server/src/socket.ts`)
+- **Add `admin-delete-request` event:** Receives an `id` and removes the request from the `requests` array.
+- **Add `admin-clear-list` event:** Resets the `requests` array to `[]`.
+- Both events will emit `admin-full-list` to all clients to sync the state.
 
-## Próximos Pasos (Fase Spec)
-- Definir los endpoints de la API.
-- Definir los eventos de Socket.io.
-- Mockup de la UI.
+### Frontend (`client/src/App.tsx`)
+- **Grouping Logic:** 
+    - Create a helper to group `requests` by date (YYYY-MM-DD).
+    - Render headers for each day in the DJ panel.
+- **New Actions:**
+    - **Global "Limpiar Lista" button:** Positioned next to the QR button.
+    - **"Borrar" button per item:** Using `Trash2` icon.
+- **Visuals:** Maintain the Cyber-Night aesthetic. Use a confirmation prompt for "Limpiar Lista".
+
+## Risks & Considerations
+- **Data Loss:** Since there is no database (memory only), "Clear List" is permanent for the session.
+- **Grouping performance:** For < 1000 items, grouping on every render (or via `useMemo`) is negligible.
